@@ -15,7 +15,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
@@ -26,7 +25,6 @@ SECRET_KEY = 'pel4*t5rj&b7_ufu3rw8y%z$^)o(o!==3wv5p98f^+@)txvohd'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -46,14 +44,14 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', #这里是新增的中间件
+    'corsheaders.middleware.CorsMiddleware',  # 这里是新增的中间件
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #加载自定义中间件   文件夹名.文件名.类名
-    #'myapp.views.MyMiddleware'
+    # 加载自定义中间件   文件夹名.文件名.类名
+    # 'myapp.views.MyMiddleware'
 ]
 
 ROOT_URLCONF = 'mydjango.urls'
@@ -61,8 +59,8 @@ ROOT_URLCONF = 'mydjango.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        #添加模板文件夹路径
-        'DIRS': [os.path.join(BASE_DIR,'templates')],
+        # 添加模板文件夹路径
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -77,24 +75,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mydjango.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DATABASES = {
-   'default': {
-          'ENGINE': 'django.db.backends.mysql', #数据库引擎
-          'NAME': 'md',                       #数据库名
-          'USER': 'root',                       #用户名
-          'PASSWORD': 'root',                   #密码
-          'HOST': '',                           #数据库主机，默认为localhost
-          'PORT': '',                           #数据库端口，MySQL默认为3306
-          'OPTIONS': {
-             'autocommit': True,
-         }
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'NAME': 'mdhub',  # 数据库名
+        'USER': 'root',  # 用户名
+        'PASSWORD': 'loveless',  # 密码
+        'HOST': '',  # 数据库主机，默认为localhost
+        'PORT': '',  # 数据库端口，MySQL默认为3306
+        'OPTIONS': {
+            'autocommit': True,
+        }
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -114,7 +110,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
@@ -128,17 +123,26 @@ USE_L10N = True
 
 USE_TZ = True
 
-
-#设置跨域
+# 设置跨域
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 
-
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS=[
-     os.path.join(BASE_DIR,'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
 ]
 
-#定义上传文件夹的路径
-UPLOAD_ROOT = os.path.join(BASE_DIR,'static/upload')
+# 定义上传文件夹的路径
+UPLOAD_ROOT = os.path.join(BASE_DIR, 'static/upload')
+
+# Redis缓存
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}

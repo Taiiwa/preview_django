@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 # 导入加密库
 import hashlib
+# 导入解密库
+# from django.contrib.auth.hashers import check_password
 # 导入图片库
 # 绘画库
 from PIL import ImageDraw
@@ -74,12 +76,21 @@ def make_password(mypass):
     return md5_server
 
 
-#生成验证码：
+#MD5验证方法
+# def check_password(mypass):
+#     md5 = hashlib.md5()
+
+
+
+# 生成验证码：
 def make_code(request):
     name, text, img = captcha.generate_captcha()
+    # 写入session
+    # request.session['code'] = text        # 可以成功设置
     # 将验证码存入到cache，设置生命周期
     cache.set('code', text, 360)
     return HttpResponse(img)
+
 
 # 注册接口
 class Reg(APIView):
@@ -99,7 +110,9 @@ class Reg(APIView):
             return Response(res)
         # 验证验证码是否正确
         if code.upper() != cache.get('code'):
-            res['code'] = 406
+            # if code.upper() != request.session.get('code'):       #读取不到
+            print(request.session.get('code'))
+            res['code'] = 405
             res['message'] = '验证码错误'
             return Response(res)
         res = {}
@@ -107,4 +120,36 @@ class Reg(APIView):
         res['message'] = '注册成功'
         user_data = User(username=username, password=password, img='', type=0)
         user_data.save()
+        return Response(res)
+
+
+# 登录接口
+class Login(APIView):
+    def get(self, request):
+        res = {}
+        username = request.GET.get('username')
+        password = request.GET.get('password')
+        code = request.GET.get('code')
+
+        # 验证码
+        if code.upper() != cache.get('code'):
+            print(request.session.get('code'))
+            res['code'] = 405
+            res['message'] = '验证码错误'
+
+        # 检查用户名和密码
+        user = User.objects.filter(username=username).first()
+        if user:
+            print(username)
+            print(user.password)
+            print(make_password(password))
+            if make_password(password) ==  user.password:
+                res['code'] = 200
+                res['message'] = '登录成功'
+            else:
+                res['code'] = 405
+                res['message'] = '密码错误'
+        else:
+            res['code'] = 405
+            res['message'] = '用户名或密码错误'
         return Response(res)

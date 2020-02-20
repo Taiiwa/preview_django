@@ -76,7 +76,7 @@ def make_password(mypass):
     return md5_server
 
 
-#MD5验证方法
+# MD5验证方法
 # def check_password(mypass):
 #     md5 = hashlib.md5()
 
@@ -143,12 +143,14 @@ class Login(APIView):
             print(username)
             print(user.password)
             print(make_password(password))
-            if make_password(password) ==  user.password:
+            if make_password(password) == user.password:
                 res['code'] = 200
                 res['message'] = '登录成功'
+                res['username'] = user.username
+                res['uid'] = user.id
             else:
                 res['code'] = 405
-                res['message'] = '密码错误'
+                res['message'] = '用户名或密码错误'
         else:
             res['code'] = 405
             res['message'] = '用户名或密码错误'

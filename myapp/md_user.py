@@ -81,6 +81,42 @@ def make_password(mypass):
 #     md5 = hashlib.md5()
 
 
+# 新浪微博回调视图
+def weibo_back(request):
+    # 获取code
+    code = request.GET.get('code')
+
+    # 换取网址
+    access_token_url = "https://api.weibo.com/oauth2/access_token"
+
+    # 发送请求进行换取
+    re_dict = requests.post(
+        access_token_url,
+        data={
+            "client_id": '2636039333',
+            "client_secret": "4e2fbdb39432c31dc5c2f90be3afa5ce",
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": "http://127.0.0.1:8000/md_admin/weibo"
+        }
+    )
+
+    uid = json.loads(re_dict.text).get('uid')
+    username = '游客' + uid
+    user = User.objects.filter(username=username).first()
+    if not user:
+        user_weibo = User(username=user, password=uid, img='', type=0)
+        user_weibo.save()
+    res = {}
+    res['code'] = 200
+
+    res['username'] = username
+
+    id = User.objects.filter(username=username).first().id
+
+    res['uid'] = id
+    return HttpResponseRedirect('http://localhost:8080/weibo?username=%s/' % uid)
+
 
 # 生成验证码：
 def make_code(request):
@@ -129,13 +165,8 @@ class Login(APIView):
         res = {}
         username = request.GET.get('username')
         password = request.GET.get('password')
-        code = request.GET.get('code')
 
         # 验证码
-        if code.upper() != cache.get('code'):
-            print(request.session.get('code'))
-            res['code'] = 405
-            res['message'] = '验证码错误'
 
         # 检查用户名和密码
         user = User.objects.filter(username=username).first()
@@ -154,4 +185,23 @@ class Login(APIView):
         else:
             res['code'] = 405
             res['message'] = '用户名或密码错误'
+        return Response(res)
+
+
+# 微博登录跳转页面
+class WeiBo(APIView):
+    def get(self, request):
+        uid = request.GET.get('uid')
+        username = '游客' + uid
+        print(username)
+        user = User.objects.filter(username=username).first()
+        res = {}
+        if user:
+            res['code'] = 200
+            res['username'] = user.username
+            res['uid'] = user.id
+            res['message'] = '登录成功'
+        else:
+            res['code'] = 400
+            res['message'] = '出现未知错误'
         return Response(res)

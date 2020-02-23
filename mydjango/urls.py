@@ -28,4 +28,5 @@ urlpatterns = [
     path('login/',Login.as_view()),
     path('md_admin/weibo/',weibo_back),
     path('weibo/',WeiBo.as_view()),
+    path('dingding_back/',ding_back)
 ]

@@ -36,6 +36,9 @@ import os
 from django.db import connection
 
 import jwt
+import urllib
+import base64
+import hmac
 
 # 导入redis数据库
 import redis
@@ -81,6 +84,51 @@ def make_password(mypass):
 #     md5 = hashlib.md5()
 
 
+# 钉钉登录回调视图
+def ding_back(request):
+
+    #获取code
+    code = request.GET.get("code")
+
+    t = time.time()
+    #时间戳
+    timestamp = str((int(round(t * 1000))))
+    appSecret ='ly-AzMKMmCKQP3geaILT_An32kEfKO3HeOtApy5CgKwjytevVZC0WYsT2gxMB160'
+    #构造签名
+    signature = base64.b64encode(hmac.new(appSecret.encode('utf-8'),timestamp.encode('utf-8'), digestmod=hashlib.sha256).digest())
+    #请求接口，换取钉钉用户名
+    payload = {'tmp_auth_code':code}
+    headers = {'Content-Type': 'application/json'}
+    res = requests.post('https://oapi.dingtalk.com/sns/getuserinfo_bycode?signature='+urllib.parse.quote(signature.decode("utf-8"))+"&timestamp="+timestamp+"&accessKey=dingoaukgkwqknzjvamdqh",data=json.dumps(payload),headers=headers)
+
+    res_dict = json.loads(res.text)
+
+    # 获取相关登录信息，拼接用户名
+    # 业务逻辑：一般平台的账号（用户名）和昵称是分离的。一般账号是英文数字下划线组成，百度支持中文账号，但不可修改。昵称支持中文，可以修改或重复。所以应该有账号（唯一字段）和昵称（不唯一字段）两个字段。这里为实验项目，暂不考虑重名，将昵称作为账号存入。
+    # uid = res_dict.get('user_info).get('unionid')
+
+    username = res_dict.get('user_info').get('nick')
+    print(res_dict)
+    print(username)
+    # 检查该用户名是否登陆过，如果没有，创建新用户
+    user = User.objects.filter(username=username).first()
+    if not user:
+        user_ding = User(username=username, password="", img='', type=0)
+        user_ding.save()
+    res = {}
+    res['code'] = 200
+
+    res['username'] = username
+
+    id = User.objects.filter(username=username).first().id
+
+    res['uid'] = id
+    return HttpResponseRedirect('http://localhost:8080/dingding?username=%s&uid=%s/' % (username,id))
+
+
+    # return JsonResponse(res_dict)
+
+
 # 新浪微博回调视图
 def weibo_back(request):
     # 获取code
@@ -101,8 +149,10 @@ def weibo_back(request):
         }
     )
 
+    # 获取相关登录信息，拼接用户名
     uid = json.loads(re_dict.text).get('uid')
     username = '游客' + uid
+    # 检查该用户名是否登陆过，如果没有，创建新用户
     user = User.objects.filter(username=username).first()
     if not user:
         user_weibo = User(username=user, password=uid, img='', type=0)

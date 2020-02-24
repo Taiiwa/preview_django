@@ -1,7 +1,11 @@
 from django.test import TestCase
 
 # Create your tests here.
-import json
-user_info= '{"name" : "john", "gender" : "male", "age": 28}'
-str = "{'a':1,'b':2}"
-print(json.loads(user_info))
+import uuid
+
+ret = uuid.uuid4()
+ret = str(ret)
+print(ret)
+print(type(ret))
+# str = ('123.jpg')
+# print(str[-4:])

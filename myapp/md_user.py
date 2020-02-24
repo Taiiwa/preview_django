@@ -62,6 +62,71 @@ from .models import *
 # 导入验证码包
 from utils.captcha.captcha import captcha
 
+#   七牛云相关
+from mydjango import settings
+from qiniu import Auth, put_data, etag
+
+# 上传文件
+class UploadFile(APIView):
+
+    def post(self,request):
+        # 定义相应对象
+        res = {}
+        # 接收文件
+        myFile = request.FILES.get('file')
+        # 获取当前用户的头像
+        username = request.POST.get('username')
+        user = User.objects.filter(username=username).first()
+        # 获取图片名，清理当前本地储存或七牛云储存的图片
+        pre_img = user.img
+        if pre_img:
+            pre_img_name = pre_img.split('/')[-1]
+            try:
+                os.remove('./static/upload/'+pre_img_name)
+            except:
+                pass
+        # 建立文件流对象，使用uuid防止图片名重复
+        file_name = str(uuid.uuid4()) + myFile.name[-4:]
+        f = open(os.path.join(UPLOAD_ROOT,'',file_name),'wb')
+        for chunk in myFile.chunks():
+            f.write(chunk)
+        # 关闭文件流
+        f.close()
+
+        # 生成头像地址
+        img = 'http://127.0.0.1:8000/static/upload/' + file_name
+
+
+
+        user.img = img
+        user.save()
+        res['data'] = img
+
+        # 需要填写你的 Access Key 和 Secret Key
+        access_key = settings.AK
+        secret_key = settings.SK
+        # 构建鉴权对象
+        q = Auth(access_key, secret_key)
+        # 要上传的空间
+        bucket_name = settings.BUCKET_NAME
+        # 上传后保存的文件名
+        key = None  # 不指定文件名
+        # 生成上传 Token，可以指定过期时间等
+        token = q.upload_token(bucket_name, key, 3600)
+        # 要上传文件的本地路径  #提交数据 到七牛云
+        ret, info = put_data(token, key, myFile.read())  # info是响应的详情   ret是响应的一部分 返回hash和key
+        pic1 = ""
+        if info.status_code == 200:
+            # 上传七牛云成功
+            pic1 = settings.QINIU_HOST + "/" + ret.get("key")
+        request.data['img'] = pic1
+
+        # 如果用七牛云，则是在数据库中存储七牛云中的图片名称：
+        print(pic1)
+
+        return Response(res)
+
+
 
 # MD5加密方法：
 def make_password(mypass):
@@ -229,6 +294,8 @@ class Login(APIView):
                 res['message'] = '登录成功'
                 res['username'] = user.username
                 res['uid'] = user.id
+                # 头像
+                res['img'] = user.img
             else:
                 res['code'] = 405
                 res['message'] = '用户名或密码错误'

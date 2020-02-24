@@ -28,7 +28,6 @@ square_len = square.size.get('width')
 
 # 终止x坐标
 end_x = int(square_len - drag_button_len)
-print((end_x, y))
 
 time.sleep(1)
 

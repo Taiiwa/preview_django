@@ -147,9 +147,3 @@ CACHES = {
     }
 }
 
-# 七牛云
-AK = 'NPHzZoXYrCpxkAr-4ZDAi13vsqEuGVSCYRX1WL3X'
-SK = 'fN8P5iMgv4wd8phVJrq3kENYlfwCyxErrxXd-A_q'
-
-BUCKET_NAME = 'missty'
-QINIU_HOST= 'q21dk57rq.bkt.clouddn.com'

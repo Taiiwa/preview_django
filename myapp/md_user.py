@@ -63,13 +63,27 @@ from .models import *
 from utils.captcha.captcha import captcha
 
 #   七牛云相关
-from mydjango import settings
-from qiniu import Auth, put_data, etag
+from qiniu_key.config import AK, SK
+from qiniu import Auth
+
+
+# 七牛云秘钥接口
+class Qiniu(APIView):
+    def get(self, request):
+        # 声明秘钥对象
+        q = Auth(AK, SK)
+
+        # 生成令牌
+        token = q.upload_token('huabeimissty')
+
+        return Response({
+            'up_token': token
+        })
+
 
 # 上传文件
 class UploadFile(APIView):
-
-    def post(self,request):
+    def post(self, request):
         # 定义相应对象
         res = {}
         # 接收文件
@@ -82,12 +96,12 @@ class UploadFile(APIView):
         if pre_img:
             pre_img_name = pre_img.split('/')[-1]
             try:
-                os.remove('./static/upload/'+pre_img_name)
+                os.remove('./static/upload/' + pre_img_name)
             except:
                 pass
         # 建立文件流对象，使用uuid防止图片名重复
         file_name = str(uuid.uuid4()) + myFile.name[-4:]
-        f = open(os.path.join(UPLOAD_ROOT,'',file_name),'wb')
+        f = open(os.path.join(UPLOAD_ROOT, '', file_name), 'wb')
         for chunk in myFile.chunks():
             f.write(chunk)
         # 关闭文件流
@@ -96,36 +110,58 @@ class UploadFile(APIView):
         # 生成头像地址
         img = 'http://127.0.0.1:8000/static/upload/' + file_name
 
-
-
         user.img = img
         user.save()
         res['data'] = img
 
-        # 需要填写你的 Access Key 和 Secret Key
-        access_key = settings.AK
-        secret_key = settings.SK
-        # 构建鉴权对象
-        q = Auth(access_key, secret_key)
-        # 要上传的空间
-        bucket_name = settings.BUCKET_NAME
-        # 上传后保存的文件名
-        key = None  # 不指定文件名
-        # 生成上传 Token，可以指定过期时间等
-        token = q.upload_token(bucket_name, key, 3600)
-        # 要上传文件的本地路径  #提交数据 到七牛云
-        ret, info = put_data(token, key, myFile.read())  # info是响应的详情   ret是响应的一部分 返回hash和key
-        pic1 = ""
-        if info.status_code == 200:
-            # 上传七牛云成功
-            pic1 = settings.QINIU_HOST + "/" + ret.get("key")
-        request.data['img'] = pic1
-
-        # 如果用七牛云，则是在数据库中存储七牛云中的图片名称：
-        print(pic1)
+        # # 需要填写你的 Access Key 和 Secret Key
+        # access_key = settings.AK
+        # secret_key = settings.SK
+        # # 构建鉴权对象
+        # q = Auth(access_key, secret_key)
+        # # 要上传的空间
+        # bucket_name = settings.BUCKET_NAME
+        # # 上传后保存的文件名
+        # key = None  # 不指定文件名
+        # # 生成上传 Token，可以指定过期时间等
+        # token = q.upload_token(bucket_name, key, 3600)
+        # # 要上传文件的本地路径  #提交数据 到七牛云
+        # ret, info = put_data(token, key, myFile.read())  # info是响应的详情   ret是响应的一部分 返回hash和key
+        # pic1 = ""
+        # if info.status_code == 200:
+        #     # 上传七牛云成功
+        #     pic1 = settings.QINIU_HOST + "/" + ret.get("key")
+        # request.data['img'] = pic1
+        #
+        # # 如果用七牛云，则是在数据库中存储七牛云中的图片名称：
+        # print(pic1)
 
         return Response(res)
 
+# 上传视频音频
+class MediaFile(APIView):
+    def post(self, request):
+        print('调用接口')
+        # 定义相应对象
+        res = {}
+        # 接收文件
+        myFile = request.FILES.get('file')
+        # 建立文件流对象
+        print('-'*100)
+        file_name = myFile.name
+        print('*'*100)
+        print(file_name)
+        f = open(os.path.join(UPLOAD_ROOT, 'media/', file_name), 'wb')
+        for chunk in myFile.chunks():
+            f.write(chunk)
+        # 关闭文件流
+        f.close()
+
+        # 生成地址
+        src = 'http://127.0.0.1:8000/static/upload/media/' + file_name
+        res['data'] = src
+
+        return Response(res)
 
 
 # MD5加密方法：
@@ -151,20 +187,22 @@ def make_password(mypass):
 
 # 钉钉登录回调视图
 def ding_back(request):
-
-    #获取code
+    # 获取code
     code = request.GET.get("code")
 
     t = time.time()
-    #时间戳
+    # 时间戳
     timestamp = str((int(round(t * 1000))))
-    appSecret ='ly-AzMKMmCKQP3geaILT_An32kEfKO3HeOtApy5CgKwjytevVZC0WYsT2gxMB160'
-    #构造签名
-    signature = base64.b64encode(hmac.new(appSecret.encode('utf-8'),timestamp.encode('utf-8'), digestmod=hashlib.sha256).digest())
-    #请求接口，换取钉钉用户名
-    payload = {'tmp_auth_code':code}
+    appSecret = 'ly-AzMKMmCKQP3geaILT_An32kEfKO3HeOtApy5CgKwjytevVZC0WYsT2gxMB160'
+    # 构造签名
+    signature = base64.b64encode(
+        hmac.new(appSecret.encode('utf-8'), timestamp.encode('utf-8'), digestmod=hashlib.sha256).digest())
+    # 请求接口，换取钉钉用户名
+    payload = {'tmp_auth_code': code}
     headers = {'Content-Type': 'application/json'}
-    res = requests.post('https://oapi.dingtalk.com/sns/getuserinfo_bycode?signature='+urllib.parse.quote(signature.decode("utf-8"))+"&timestamp="+timestamp+"&accessKey=dingoaukgkwqknzjvamdqh",data=json.dumps(payload),headers=headers)
+    res = requests.post('https://oapi.dingtalk.com/sns/getuserinfo_bycode?signature=' + urllib.parse.quote(
+        signature.decode("utf-8")) + "&timestamp=" + timestamp + "&accessKey=dingoaukgkwqknzjvamdqh",
+                        data=json.dumps(payload), headers=headers)
 
     res_dict = json.loads(res.text)
 
@@ -188,7 +226,7 @@ def ding_back(request):
     id = User.objects.filter(username=username).first().id
 
     res['uid'] = id
-    return HttpResponseRedirect('http://localhost:8080/dingding?username=%s&uid=%s/' % (username,id))
+    return HttpResponseRedirect('http://localhost:8080/dingding?username=%s&uid=%s/' % (username, id))
 
 
     # return JsonResponse(res_dict)

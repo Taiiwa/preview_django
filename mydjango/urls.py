@@ -30,5 +30,7 @@ urlpatterns = [
     path('weibo/',WeiBo.as_view()),
     path('dingding_back/',ding_back),
     path('upload_file/',UploadFile.as_view()),
+    path('media_file/',MediaFile.as_view()),
+    path('up_token/',Qiniu.as_view()),
 
 ]

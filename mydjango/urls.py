@@ -32,5 +32,8 @@ urlpatterns = [
     path('upload_file/',UploadFile.as_view()),
     path('media_file/',MediaFile.as_view()),
     path('up_token/',Qiniu.as_view()),
+    path('con_submit/',ConSubmit.as_view()),
+    path('delete_temp_img/',DeleteTempImg.as_view()),
+    path('password_change/',PasswordChange.as_view()),
 
 ]

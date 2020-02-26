@@ -81,25 +81,80 @@ class Qiniu(APIView):
         })
 
 
+# 修改密码
+class PasswordChange(APIView):
+    def post(self,request):
+        # 接收数据
+        uid = request.POST.get('uid')
+        old_password = request.POST.get('old_password')
+        new_password = request.POST.get('new_password')
+
+        # 构建返回对象
+        res = {}
+
+        # 比对原密码
+        user = User.objects.get(id=uid)
+        if make_password(old_password) == user.password:
+            user.password = make_password(new_password)
+            user.save()
+            res['code'] = 200
+            return Response(res)
+
+        res['code'] = 405
+        return Response(res)
+
+# 修改头像，入库
+class ConSubmit(APIView):
+    def get(self, request):
+        # 获取传入的uid和头像
+        uid = request.GET.get('uid')
+        img = request.GET.get('img')
+
+        # 入库
+        user = User.objects.get(id=uid)
+        user.img = img
+        user.save()
+
+        res = {}
+        res['code'] = 200
+        res['message'] = '上传成功'
+
+        return Response(res)
+
+
+# 退出修改页面，删除缓存图片
+class DeleteTempImg(APIView):
+    def get(self, request):
+        # 获取目标图片：
+        temp_img = request.GET.get('temp_img')
+        #删除
+        if temp_img:
+            try:
+                os.remove('./static/upload/' + temp_img)
+            except:
+                pass
+        res = {}
+        res['code'] = 200
+
+        return Response(res)
+
+
 # 上传文件
 class UploadFile(APIView):
     def post(self, request):
         # 定义相应对象
         res = {}
-        # 接收文件
+        # user = User.objects.filter(username=username).first()
+        # # 获取图片名，清理当前本地储存或七牛云储存的图片
+        # pre_img = user.img
+        # if pre_img:
+        #     pre_img_name = pre_img.split('/')[-1]
+        #     try:
+        #         os.remove('./static/upload/' + pre_img_name)
+        #     except:
+        #         pass
+        # 【【【4，后端获取文件名，以uuid重命名，并保存到本地】】】
         myFile = request.FILES.get('file')
-        # 获取当前用户的头像
-        username = request.POST.get('username')
-        user = User.objects.filter(username=username).first()
-        # 获取图片名，清理当前本地储存或七牛云储存的图片
-        pre_img = user.img
-        if pre_img:
-            pre_img_name = pre_img.split('/')[-1]
-            try:
-                os.remove('./static/upload/' + pre_img_name)
-            except:
-                pass
-        # 建立文件流对象，使用uuid防止图片名重复
         file_name = str(uuid.uuid4()) + myFile.name[-4:]
         f = open(os.path.join(UPLOAD_ROOT, '', file_name), 'wb')
         for chunk in myFile.chunks():
@@ -107,12 +162,18 @@ class UploadFile(APIView):
         # 关闭文件流
         f.close()
 
-        # 生成头像地址
-        img = 'http://127.0.0.1:8000/static/upload/' + file_name
+        #  【【【5，后端尝试获取localStorage中的临时头像，如果获取到了，则删除】】】
 
-        user.img = img
-        user.save()
-        res['data'] = img
+        temp_img = request.POST.get('temp_img')
+
+        if temp_img:
+            try:
+                os.remove('./static/upload/' + temp_img)
+            except:
+                pass
+
+        # 返回新头像名
+        res['data'] = file_name
 
         # # 需要填写你的 Access Key 和 Secret Key
         # access_key = settings.AK
@@ -138,6 +199,7 @@ class UploadFile(APIView):
 
         return Response(res)
 
+
 # 上传视频音频
 class MediaFile(APIView):
     def post(self, request):
@@ -147,9 +209,9 @@ class MediaFile(APIView):
         # 接收文件
         myFile = request.FILES.get('file')
         # 建立文件流对象
-        print('-'*100)
+        print('-' * 100)
         file_name = myFile.name
-        print('*'*100)
+        print('*' * 100)
         print(file_name)
         f = open(os.path.join(UPLOAD_ROOT, 'media/', file_name), 'wb')
         for chunk in myFile.chunks():
@@ -324,9 +386,7 @@ class Login(APIView):
         # 检查用户名和密码
         user = User.objects.filter(username=username).first()
         if user:
-            print(username)
-            print(user.password)
-            print(make_password(password))
+
             if make_password(password) == user.password:
                 res['code'] = 200
                 res['message'] = '登录成功'

@@ -392,6 +392,7 @@ class Login(APIView):
                 res['message'] = '登录成功'
                 res['username'] = user.username
                 res['uid'] = user.id
+                res['type'] = user.type
                 # 头像
                 res['img'] = user.img
             else:

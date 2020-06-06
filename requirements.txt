@@ -13,7 +13,7 @@ configparser==4.0.2
 constantly==15.1.0
 cryptography==2.8
 cssselect==1.1.0
-Django==2.0.4
+Django==2.2.13
 django-cors-headers==3.2.1
 django-redis==4.10.0
 django-rest-framework-mongoengine==3.3.1

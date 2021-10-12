@@ -43,7 +43,7 @@ mongoengine==0.19.1
 mysqlclient==1.4.4
 numpy==1.18.1
 opencv-contrib-python==4.1.2.30
-opencv-python==4.1.2.30
+opencv-python==4.2.0.32
 parsel==1.5.2
 pbr==5.4.4
 pefile==2019.4.18
